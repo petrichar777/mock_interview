@@ -75,7 +75,7 @@ public class AuthService {
         String ipKey = REGISTER_IP_KEY_PREFIX + clientIp;
         Long ipAttempts = redisUtil.incrementWithExpiry(ipKey, REGISTER_IP_WINDOW);
         if (ipAttempts != null && ipAttempts > MAX_REGISTER_IP_ATTEMPTS) {
-            throw new BusinessException("注册操作过于频繁，请1小时后再试");
+            throw new BusinessException(429, "注册操作过于频繁，请1小时后再试");
         }
 
         String username = request.getUsername() == null ? null : request.getUsername().trim();
@@ -129,14 +129,14 @@ public class AuthService {
         String ipKey = LOGIN_IP_KEY_PREFIX + clientIp;
         Long ipAttempts = redisUtil.incrementWithExpiry(ipKey, LOGIN_IP_WINDOW);
         if (ipAttempts != null && ipAttempts > MAX_LOGIN_IP_ATTEMPTS) {
-            throw new BusinessException("登录尝试过于频繁，请15分钟后再试");
+            throw new BusinessException(429, "登录尝试过于频繁，请15分钟后再试");
         }
 
         // 账号维度限流检查
         String accountKey = LOGIN_ACCOUNT_KEY_PREFIX + account.toLowerCase();
         Long accountAttempts = redisUtil.incrementWithExpiry(accountKey, LOGIN_ACCOUNT_WINDOW);
         if (accountAttempts != null && accountAttempts > MAX_LOGIN_ACCOUNT_ATTEMPTS) {
-            throw new BusinessException("该账号登录尝试过于频繁，请15分钟后再试");
+            throw new BusinessException(429, "该账号登录尝试过于频繁，请15分钟后再试");
         }
 
         User user = findByAccount(account);
@@ -186,13 +186,13 @@ public class AuthService {
         String ipKey = "auth:reset:ip:" + clientIp;
         Long ipCount = redisUtil.incrementWithExpiry(ipKey, Duration.ofMinutes(10));
         if (ipCount != null && ipCount > 3) {
-            throw new BusinessException("操作过于频繁，请10分钟后再试");
+            throw new BusinessException(429, "操作过于频繁，请10分钟后再试");
         }
         // Email rate limit: 1 attempt per 60 seconds (atomic setIfAbsent)
         String emailLimitKey = "auth:reset:email:" + email;
         Boolean acquired = stringRedisTemplate.opsForValue().setIfAbsent(emailLimitKey, "1", Duration.ofSeconds(60));
         if (Boolean.FALSE.equals(acquired)) {
-            throw new BusinessException("验证码已发送，请60秒后再试");
+            throw new BusinessException(429, "验证码已发送，请60秒后再试");
         }
         User user = findByEmail(email);
         if (user == null) {
@@ -294,13 +294,13 @@ public class AuthService {
         String ipKey = LOGIN_CODE_IP_KEY_PREFIX + clientIp;
         Long ipCount = redisUtil.incrementWithExpiry(ipKey, LOGIN_CODE_IP_WINDOW);
         if (ipCount != null && ipCount > MAX_LOGIN_CODE_IP_ATTEMPTS) {
-            throw new BusinessException("操作过于频繁，请15分钟后再试");
+            throw new BusinessException(429, "操作过于频繁，请15分钟后再试");
         }
         // Email rate limit: 1 attempt per 60 seconds
         String emailLimitKey = LOGIN_CODE_EMAIL_KEY_PREFIX + email;
         Boolean acquired = stringRedisTemplate.opsForValue().setIfAbsent(emailLimitKey, "1", Duration.ofSeconds(60));
         if (Boolean.FALSE.equals(acquired)) {
-            throw new BusinessException("验证码已发送，请60秒后再试");
+            throw new BusinessException(429, "验证码已发送，请60秒后再试");
         }
         User user = findByEmail(email);
         if (user == null) {

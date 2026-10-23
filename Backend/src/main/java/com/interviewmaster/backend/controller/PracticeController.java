@@ -7,6 +7,8 @@ import com.interviewmaster.backend.model.dto.response.PracticeAddMistakeResponse
 import com.interviewmaster.backend.model.dto.response.PracticeModuleListResponse;
 import com.interviewmaster.backend.model.dto.response.PracticeNextQuestionResponse;
 import com.interviewmaster.backend.model.dto.response.PracticeSubmitAnswerResponse;
+import com.interviewmaster.backend.ratelimit.RateLimit;
+import com.interviewmaster.backend.ratelimit.RateLimitDimension;
 import com.interviewmaster.backend.service.PracticeService;
 import com.interviewmaster.backend.util.ApiResponse;
 import jakarta.validation.Valid;
@@ -45,6 +47,8 @@ public class PracticeController {
     }
 
     @SaCheckLogin
+    @RateLimit(key = "practice-submit", count = 60, period = 60,
+            dimension = RateLimitDimension.USER, message = "答题提交过于频繁，请稍后再试")
     @PostMapping("/questions/{questionId}/submit")
     public ResponseEntity<?> submitAnswer(@PathVariable Long questionId,
                                           @Valid @RequestBody PracticeSubmitAnswerRequest request) {

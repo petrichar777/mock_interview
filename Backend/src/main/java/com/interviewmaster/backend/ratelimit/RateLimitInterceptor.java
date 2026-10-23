@@ -1,6 +1,7 @@
 package com.interviewmaster.backend.ratelimit;
 
 import cn.dev33.satoken.stp.StpUtil;
+import com.interviewmaster.backend.config.RateLimitProperties;
 import com.interviewmaster.backend.exception.BusinessException;
 import com.interviewmaster.backend.model.entity.RateLimitLog;
 import com.interviewmaster.backend.util.WebUtils;
@@ -29,15 +30,24 @@ public class RateLimitInterceptor implements HandlerInterceptor {
     private static final int MAX_LIMIT_KEY_LENGTH = 200;
     private static final int MAX_URI_LENGTH = 255;
     private static final int MAX_IP_LENGTH = 64;
+    private static final String GLOBAL_FALLBACK_KEY_SUFFIX = "global-fallback";
 
     private final RateLimitService rateLimitService;
     private final RateLimitLogService rateLimitLogService;
+    private final RateLimitProperties rateLimitProperties;
 
     @Override
     public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler) {
         if (!(handler instanceof HandlerMethod handlerMethod)) {
             return true;
         }
+        if ("OPTIONS".equalsIgnoreCase(request.getMethod())) {
+            return true;
+        }
+        if (rateLimitProperties.isGlobalFallbackEnabled() && !isGlobalFallbackExcluded(request)) {
+            enforceGlobalFallback(request, response);
+        }
+
         Set<RateLimit> rules = AnnotatedElementUtils.findMergedRepeatableAnnotations(
                 handlerMethod.getMethod(), RateLimit.class);
         if (rules.isEmpty()) {
@@ -50,6 +60,22 @@ public class RateLimitInterceptor implements HandlerInterceptor {
         return true;
     }
 
+    private void enforceGlobalFallback(HttpServletRequest request, HttpServletResponse response) {
+        String clientIp = WebUtils.getClientIp(request);
+        LimitTarget target = new LimitTarget(RateLimitDimension.IP, clientIp, null, clientIp);
+        String key = "ratelimit:ip:" + clientIp + ":" + GLOBAL_FALLBACK_KEY_SUFFIX;
+        RateLimitResult result = rateLimitService.tryAcquire(
+                key,
+                rateLimitProperties.getGlobalFallbackCount(),
+                Duration.ofSeconds(rateLimitProperties.getGlobalFallbackPeriod()));
+        if (result.allowed()) {
+            return;
+        }
+        reject(target, rateLimitProperties.getGlobalFallbackCount(),
+                rateLimitProperties.getGlobalFallbackPeriod(), result, key, request, response,
+                rateLimitProperties.getGlobalFallbackMessage());
+    }
+
     private void enforce(RateLimit rule, HttpServletRequest request, HttpServletResponse response) {
         LimitTarget target = resolveTarget(request, rule.dimension());
         String key = buildKey(rule, target, request);
@@ -58,11 +84,22 @@ public class RateLimitInterceptor implements HandlerInterceptor {
         if (result.allowed()) {
             return;
         }
+        reject(target, rule.count(), rule.period(), result, key, request, response, rule.message());
+    }
+
+    private void reject(LimitTarget target, int limitCount, int windowSeconds,
+                        RateLimitResult result, String key, HttpServletRequest request,
+                        HttpServletResponse response, String message) {
         response.setHeader("Retry-After", String.valueOf(result.retryAfterSeconds()));
         log.warn("rate limit hit, key={}, userId={}, clientIp={}, uri={}",
                 key, target.userId(), target.clientIp(), request.getRequestURI());
-        recordViolation(rule, target, result, key, request);
-        throw new BusinessException(429, rule.message());
+        recordViolation(target, limitCount, windowSeconds, result, key, request);
+        throw new BusinessException(429, message);
+    }
+
+    private boolean isGlobalFallbackExcluded(HttpServletRequest request) {
+        String uri = request.getRequestURI();
+        return "/api/health".equals(uri) || uri.startsWith("/error");
     }
 
     private LimitTarget resolveTarget(HttpServletRequest request, RateLimitDimension dimension) {
@@ -115,8 +152,8 @@ public class RateLimitInterceptor implements HandlerInterceptor {
                 + suffix;
     }
 
-    private void recordViolation(RateLimit rule, LimitTarget target, RateLimitResult result,
-                                 String key, HttpServletRequest request) {
+    private void recordViolation(LimitTarget target, int limitCount, int windowSeconds,
+                                 RateLimitResult result, String key, HttpServletRequest request) {
         RateLimitLog entry = new RateLimitLog();
         entry.setLimitKey(truncate(key, MAX_LIMIT_KEY_LENGTH));
         entry.setDimension(target.dimension().name());
@@ -124,8 +161,8 @@ public class RateLimitInterceptor implements HandlerInterceptor {
         entry.setClientIp(truncate(target.clientIp(), MAX_IP_LENGTH));
         entry.setRequestUri(truncate(request.getRequestURI(), MAX_URI_LENGTH));
         entry.setRequestMethod(request.getMethod());
-        entry.setLimitCount(rule.count());
-        entry.setWindowSeconds(rule.period());
+        entry.setLimitCount(limitCount);
+        entry.setWindowSeconds(windowSeconds);
         entry.setCurrentCount((int) result.currentCount());
         rateLimitLogService.save(entry);
     }

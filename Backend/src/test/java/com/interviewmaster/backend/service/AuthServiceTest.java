@@ -14,6 +14,7 @@ import static org.mockito.Mockito.when;
 import com.interviewmaster.backend.exception.BusinessException;
 import com.interviewmaster.backend.mapper.UserMapper;
 import com.interviewmaster.backend.util.RedisUtil;
+import com.interviewmaster.backend.model.dto.request.LoginRequest;
 import com.interviewmaster.backend.model.dto.request.ResetPasswordRequest;
 import com.interviewmaster.backend.model.dto.request.RegisterRequest;
 import com.interviewmaster.backend.model.dto.request.SendResetCodeRequest;
@@ -64,6 +65,33 @@ class AuthServiceTest {
         authService = new AuthService(userMapper, passwordEncoder, stringRedisTemplate, mailSenderProvider, redisUtil);
         // 注册和登录限流：默认返回 1（未超限），各测试可按需覆盖
         lenient().when(redisUtil.incrementWithExpiry(anyString(), any())).thenReturn(1L);
+    }
+
+    @Test
+    void register_ipLimitExceeded_throws429() {
+        when(redisUtil.incrementWithExpiry(anyString(), any())).thenReturn(4L);
+        RegisterRequest request = new RegisterRequest();
+        request.setUsername("limitprobe");
+        request.setEmail("limitprobe@example.com");
+        request.setPassword("12345678");
+
+        BusinessException ex = assertThrows(BusinessException.class,
+                () -> authService.register(request, "127.0.0.1"));
+
+        assertEquals(429, ex.getCode());
+    }
+
+    @Test
+    void login_ipLimitExceeded_throws429() {
+        when(redisUtil.incrementWithExpiry(anyString(), any())).thenReturn(21L);
+        LoginRequest request = new LoginRequest();
+        request.setAccount("nobody");
+        request.setPassword("Password123");
+
+        BusinessException ex = assertThrows(BusinessException.class,
+                () -> authService.login(request, "127.0.0.1"));
+
+        assertEquals(429, ex.getCode());
     }
 
     @Test

@@ -11,6 +11,12 @@ security:
   hsts:
     enabled: false
 
+# 全局 IP 兜底限流；压测时可设置 RATE_LIMIT_GLOBAL_FALLBACK_ENABLED=false 关闭
+rate-limit:
+  global-fallback-enabled: ${RATE_LIMIT_GLOBAL_FALLBACK_ENABLED:true}
+  global-fallback-count: ${RATE_LIMIT_GLOBAL_FALLBACK_COUNT:300}
+  global-fallback-period: ${RATE_LIMIT_GLOBAL_FALLBACK_PERIOD:60}
+
 spring:
   lifecycle:
     timeout-per-shutdown-phase: 30s

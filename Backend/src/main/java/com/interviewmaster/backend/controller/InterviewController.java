@@ -19,6 +19,8 @@ import com.interviewmaster.backend.model.dto.response.InterviewSessionMessageRes
 import com.interviewmaster.backend.model.dto.response.ResumeParseResponse;
 import com.interviewmaster.backend.model.dto.response.SubmitInterviewAnswerResponse;
 import java.util.List;
+import com.interviewmaster.backend.ratelimit.RateLimit;
+import com.interviewmaster.backend.ratelimit.RateLimitDimension;
 import com.interviewmaster.backend.service.InterviewService;
 import com.interviewmaster.backend.service.ResumeService;
 import com.interviewmaster.backend.util.ApiResponse;
@@ -93,6 +95,8 @@ public class InterviewController {
     }
 
     @SaCheckLogin
+    @RateLimit(key = "interview-create", count = 5, period = 600,
+            dimension = RateLimitDimension.USER, message = "创建 AI 面试过于频繁，请稍后再试")
     @PostMapping("/sessions")
     public ResponseEntity<?> createSession(@Valid @RequestBody CreateInterviewSessionRequest request) {
         Long userId = StpUtil.getLoginIdAsLong();

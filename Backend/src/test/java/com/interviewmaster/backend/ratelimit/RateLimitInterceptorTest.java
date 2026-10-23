@@ -10,6 +10,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
+import com.interviewmaster.backend.config.RateLimitProperties;
 import com.interviewmaster.backend.exception.BusinessException;
 import com.interviewmaster.backend.model.entity.RateLimitLog;
 import java.lang.reflect.Method;
@@ -35,16 +36,66 @@ class RateLimitInterceptorTest {
     private RateLimitLogService rateLimitLogService;
 
     private RateLimitInterceptor interceptor;
+    private RateLimitProperties rateLimitProperties;
 
     @BeforeEach
     void setUp() {
-        interceptor = new RateLimitInterceptor(rateLimitService, rateLimitLogService);
+        rateLimitProperties = new RateLimitProperties();
+        rateLimitProperties.setGlobalFallbackEnabled(false);
+        interceptor = new RateLimitInterceptor(
+                rateLimitService, rateLimitLogService, rateLimitProperties);
     }
 
     @Test
     void preHandle_noAnnotation_passesWithoutRateLimit() throws Exception {
         HandlerMethod handlerMethod = handlerMethod(new PlainController(), "plain");
         MockHttpServletRequest request = request("GET", "/api/plain");
+
+        assertTrue(interceptor.preHandle(request, new MockHttpServletResponse(), handlerMethod));
+        verifyNoInteractions(rateLimitService, rateLimitLogService);
+    }
+
+    @Test
+    void preHandle_noAnnotation_globalFallbackBlocks() throws Exception {
+        rateLimitProperties.setGlobalFallbackEnabled(true);
+        rateLimitProperties.setGlobalFallbackCount(2);
+        rateLimitProperties.setGlobalFallbackPeriod(60);
+        HandlerMethod handlerMethod = handlerMethod(new PlainController(), "plain");
+        MockHttpServletRequest request = request("GET", "/api/plain");
+        MockHttpServletResponse response = new MockHttpServletResponse();
+        when(rateLimitService.tryAcquire(
+                eq("ratelimit:ip:192.0.2.20:global-fallback"),
+                eq(2),
+                eq(Duration.ofSeconds(60))))
+                .thenReturn(new RateLimitResult(false, 2, 2, 30));
+
+        BusinessException ex = assertThrows(BusinessException.class,
+                () -> interceptor.preHandle(request, response, handlerMethod));
+
+        assertEquals(429, ex.getCode());
+        assertEquals("30", response.getHeader("Retry-After"));
+        ArgumentCaptor<RateLimitLog> logCaptor = ArgumentCaptor.forClass(RateLimitLog.class);
+        verify(rateLimitLogService).save(logCaptor.capture());
+        assertEquals("IP", logCaptor.getValue().getDimension());
+        assertEquals(2, logCaptor.getValue().getLimitCount());
+        assertEquals(60, logCaptor.getValue().getWindowSeconds());
+    }
+
+    @Test
+    void preHandle_healthEndpoint_skipsGlobalFallback() throws Exception {
+        rateLimitProperties.setGlobalFallbackEnabled(true);
+        HandlerMethod handlerMethod = handlerMethod(new PlainController(), "plain");
+        MockHttpServletRequest request = request("GET", "/api/health");
+
+        assertTrue(interceptor.preHandle(request, new MockHttpServletResponse(), handlerMethod));
+        verifyNoInteractions(rateLimitService, rateLimitLogService);
+    }
+
+    @Test
+    void preHandle_optionsRequest_skipsAllLimits() throws Exception {
+        rateLimitProperties.setGlobalFallbackEnabled(true);
+        HandlerMethod handlerMethod = handlerMethod(new LimitedController(), "limited");
+        MockHttpServletRequest request = request("OPTIONS", "/api/test");
 
         assertTrue(interceptor.preHandle(request, new MockHttpServletResponse(), handlerMethod));
         verifyNoInteractions(rateLimitService, rateLimitLogService);
