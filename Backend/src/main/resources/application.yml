@@ -18,7 +18,7 @@ spring:
     name: interview-master-backend
   datasource:
     driver-class-name: com.mysql.cj.jdbc.Driver
-    url: ${DB_URL:jdbc:mysql://127.0.0.1:3306/mock_interview?useUnicode=true&characterEncoding=utf8mb4&useSSL=false&serverTimezone=Asia/Shanghai}
+    url: ${DB_URL:jdbc:mysql://127.0.0.1:3306/mock_interview?useUnicode=true&characterEncoding=UTF-8&useSSL=false&serverTimezone=Asia/Shanghai}
     username: ${DB_USERNAME:root}
     password: ${DB_PASSWORD:}
     hikari:
@@ -72,7 +72,7 @@ sa-token:
   token-prefix: Bearer
   is-log: false
   timeout: 86400
-  activity-timeout: 3600
+  active-timeout: 3600
   # 会话统一写入 Redis，双实例/蓝绿切换下共享登录态
   is-share: false
   token-style: uuid

@@ -4,4 +4,7 @@ Users/
 .idea/
 *.iml
 *.log
+*.jar
+sql/baseline-*.sql
 src/main/resources/application-local.yml
+src/main/resources/application-remote.yml
