@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { escapeHtml, renderMessageContent } from '@/utils/markdown'
+import { escapeHtml, renderMarkdownSafe, renderMessageContent } from '@/utils/markdown'
 import type { InterviewMessage } from '@/api/modules/interview'
 
 describe('escapeHtml', () => {
@@ -20,6 +20,16 @@ describe('escapeHtml', () => {
 
   it('returns plain text unchanged', () => {
     expect(escapeHtml('hello world')).toBe('hello world')
+  })
+})
+
+describe('renderMarkdownSafe', () => {
+  it('renders markdown while escaping raw HTML', () => {
+    const result = renderMarkdownSafe('## 总结\n\n<script>alert(1)</script>\n\n- **重点**')
+    expect(result).toContain('<h2>总结</h2>')
+    expect(result).toContain('<strong>重点</strong>')
+    expect(result).not.toContain('<script>')
+    expect(result).toContain('&lt;script&gt;')
   })
 })
 

@@ -46,4 +46,16 @@ public class AsyncConfig {
         executor.initialize();
         return executor;
     }
+
+    @Bean("roomReportExecutor")
+    public Executor roomReportExecutor() {
+        ThreadPoolTaskExecutor executor = new ThreadPoolTaskExecutor();
+        executor.setCorePoolSize(2);
+        executor.setMaxPoolSize(4);
+        executor.setQueueCapacity(50);
+        executor.setRejectedExecutionHandler(new ThreadPoolExecutor.CallerRunsPolicy());
+        executor.setThreadNamePrefix("room-report-");
+        executor.initialize();
+        return executor;
+    }
 }

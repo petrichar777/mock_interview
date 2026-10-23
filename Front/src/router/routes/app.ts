@@ -42,6 +42,24 @@ export const appRoutes: RouteRecordRaw[] = [
         meta: { title: 'AI 模拟面试' },
       },
       {
+        path: 'interview/room',
+        name: 'app-interview-room-entry',
+        component: () => import('@/pages/app/InterviewRoomPage.vue'),
+        meta: { title: '双人视频面试' },
+      },
+      {
+        path: 'interview/room/:roomCode',
+        name: 'app-interview-room',
+        component: () => import('@/pages/app/InterviewRoomPage.vue'),
+        meta: { title: '双人视频面试' },
+      },
+      {
+        path: 'interview/room/:roomCode/report',
+        name: 'app-interview-room-report',
+        component: () => import('@/pages/app/InterviewRoomReportPage.vue'),
+        meta: { title: '双人面试报告' },
+      },
+      {
         path: 'interview/:sessionId',
         name: 'app-interview-chat',
         component: () => import('@/pages/app/InterviewChatPage.vue'),

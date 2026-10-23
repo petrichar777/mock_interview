@@ -38,7 +38,9 @@ describe('apiClient', () => {
     const { apiClient } = await import('@/api/client')
 
     const config = { headers: {} } as InternalAxiosRequestConfig
-    const interceptor = (apiClient.interceptors.request as any).handlers[0]
+    const interceptor = (apiClient.interceptors.request as unknown as {
+      handlers: Array<{ fulfilled: (config: InternalAxiosRequestConfig) => InternalAxiosRequestConfig }>
+    }).handlers[0]
     const result = interceptor.fulfilled(config)
 
     expect(result.headers['Authorization']).toBe('Bearer test-token')
@@ -51,7 +53,9 @@ describe('apiClient', () => {
     const { apiClient } = await import('@/api/client')
 
     const config = { headers: {} } as InternalAxiosRequestConfig
-    const interceptor = (apiClient.interceptors.request as any).handlers[0]
+    const interceptor = (apiClient.interceptors.request as unknown as {
+      handlers: Array<{ fulfilled: (config: InternalAxiosRequestConfig) => InternalAxiosRequestConfig }>
+    }).handlers[0]
     const result = interceptor.fulfilled(config)
 
     expect(result.headers['Authorization']).toBeUndefined()
@@ -88,7 +92,7 @@ describe('unwrap', () => {
       await unwrap(Promise.resolve(response))
       expect.fail('should have thrown')
     } catch (err) {
-      expect((err as any).code).toBe(401)
+      expect((err as { code?: number }).code).toBe(401)
     }
   })
 })

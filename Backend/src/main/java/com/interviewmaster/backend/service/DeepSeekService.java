@@ -50,6 +50,10 @@ public class DeepSeekService {
         return deepSeekModel;
     }
 
+    public String generateRoomSummary(String systemPrompt, String userPrompt) {
+        return chat(systemPrompt, userPrompt, 0.4);
+    }
+
     public String generateOpeningQuestion(String jobTitle, String mode, String style, String jdText, String resumeContext) {
         boolean pressure = "PRESSURE".equalsIgnoreCase(style);
         boolean isAlgo = "ALGORITHM".equalsIgnoreCase(mode);

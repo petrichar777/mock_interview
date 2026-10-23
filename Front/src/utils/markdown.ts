@@ -84,6 +84,10 @@ function renderMarkdown(raw: string) {
   return html.join('')
 }
 
+export function renderMarkdownSafe(raw: string) {
+  return renderMarkdown(raw)
+}
+
 export function renderMessageContent(message: InterviewMessage) {
   if (message.role !== 'AI') {
     return escapeHtml(message.content)

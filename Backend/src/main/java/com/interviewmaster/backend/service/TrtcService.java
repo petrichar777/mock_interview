@@ -38,6 +38,11 @@ public class TrtcService {
         return trtcProperties.getSdkAppId();
     }
 
+    public long getUserSigExpireSeconds() {
+        validateConfiguration();
+        return trtcProperties.getUserSigExpireSeconds();
+    }
+
     private void validateConfiguration() {
         if (trtcProperties.getSdkAppId() <= 0
                 || !StringUtils.hasText(trtcProperties.getSecretKey())

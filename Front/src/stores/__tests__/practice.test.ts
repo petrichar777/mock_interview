@@ -11,6 +11,16 @@ vi.mock('@/api/modules/practice', () => ({
 
 import { usePracticeStore } from '@/stores/practice'
 import * as practiceApi from '@/api/modules/practice'
+import type { SubmitAnswerResponse } from '@/api/modules/practice'
+
+function mockSubmitResult(overrides: Partial<SubmitAnswerResponse> = {}): SubmitAnswerResponse {
+  return {
+    correct: true,
+    correctAnswers: ['A'],
+    tags: [],
+    ...overrides,
+  }
+}
 
 function mockModuleListResponse() {
   return {
@@ -125,7 +135,7 @@ describe('practice store', () => {
     it('clears previous submit result', async () => {
       vi.mocked(practiceApi.getNextQuestion).mockResolvedValue(mockQuestionDetail())
       const store = usePracticeStore()
-      store.submitResult = { correct: true, correctAnswers: ['A'] } as any
+      store.submitResult = mockSubmitResult()
 
       await store.fetchNextQuestion('1')
       expect(store.submitResult).toBeNull()
@@ -153,11 +163,9 @@ describe('practice store', () => {
     })
 
     it('submits answer and stores result', async () => {
-      vi.mocked(practiceApi.submitAnswer).mockResolvedValue({
-        correct: true,
-        correctAnswers: ['A'],
-        analysis: 'Good job!',
-      } as any)
+      vi.mocked(practiceApi.submitAnswer).mockResolvedValue(
+        mockSubmitResult({ analysis: 'Good job!' }),
+      )
 
       const store = usePracticeStore()
       store.currentQuestion = mockQuestionDetail()
@@ -231,7 +239,7 @@ describe('practice store', () => {
   describe('clearSubmitResult', () => {
     it('clears submit result', () => {
       const store = usePracticeStore()
-      store.submitResult = { correct: false } as any
+      store.submitResult = mockSubmitResult({ correct: false })
       store.clearSubmitResult()
       expect(store.submitResult).toBeNull()
     })

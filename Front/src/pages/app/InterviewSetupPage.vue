@@ -289,6 +289,29 @@ onMounted(async () => {
         </div>
       </div>
 
+      <div class="fade-in-up delay-100 relative z-10 mb-6 rounded-2xl border border-indigo-100 bg-indigo-50/70 p-4 sm:flex sm:items-center sm:justify-between sm:gap-4">
+        <div class="flex items-start gap-3">
+          <span class="inline-flex h-10 w-10 flex-none items-center justify-center rounded-xl bg-white text-indigo-500 shadow-sm">
+            <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 10l4.55-2.28A1 1 0 0121 8.62v6.76a1 1 0 01-1.45.9L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
+            </svg>
+          </span>
+          <div>
+            <p class="text-sm font-extrabold text-indigo-900">双人视频面试</p>
+            <p class="mt-1 text-xs font-medium leading-relaxed text-indigo-600/80">创建房间码邀请候选人，使用 TRTC 音视频 + 结构化面试单 + AI 总结。</p>
+          </div>
+        </div>
+        <RouterLink
+          to="/app/interview/room"
+          class="mt-3 inline-flex w-full items-center justify-center gap-1 rounded-xl bg-indigo-500 px-4 py-2.5 text-xs font-extrabold text-white shadow-sm transition-all hover:bg-indigo-600 sm:mt-0 sm:w-auto"
+        >
+          进入双人面试
+          <svg class="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M14 5l7 7m0 0l-7 7m7-7H3" />
+          </svg>
+        </RouterLink>
+      </div>
+
       <form class="fade-in-up delay-100 relative z-10 space-y-6" @submit.prevent="onCreateSession">
         <div v-show="!isAlgorithmMode" class="group">
           <label class="mb-2 block text-sm font-extrabold text-gray-700 transition-colors group-focus-within:text-rose-500">

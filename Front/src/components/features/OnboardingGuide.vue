@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 
 const emit = defineEmits<{
@@ -6,6 +7,11 @@ const emit = defineEmits<{
 }>()
 
 const router = useRouter()
+const visible = ref(false)
+
+onMounted(() => {
+  visible.value = true
+})
 
 function completeOnboarding() {
   localStorage.setItem('onboarding_completed', 'true')
@@ -26,7 +32,7 @@ function goInterview() {
 <template>
   <Teleport to="body">
     <Transition name="modal">
-      <div class="fixed inset-0 z-[100] flex items-center justify-center bg-black/30 backdrop-blur-sm">
+      <div v-if="visible" class="fixed inset-0 z-[100] flex items-center justify-center bg-black/30 backdrop-blur-sm">
         <div class="relative mx-4 flex max-h-[90vh] w-full max-w-2xl flex-col overflow-y-auto rounded-3xl border border-white bg-white/95 p-6 shadow-[0_24px_60px_rgba(0,0,0,0.12)] backdrop-blur-xl sm:p-10">
           <!-- Welcome header -->
           <div class="mb-8 text-center">
