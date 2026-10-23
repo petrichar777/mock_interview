@@ -1,0 +1,6 @@
+# 生产环境配置：数据库、Redis、邮箱、AI、TRTC 凭据全部由环境变量注入
+# 启动: java -jar xxx.jar --spring.profiles.active=production
+
+security:
+  hsts:
+    enabled: true
